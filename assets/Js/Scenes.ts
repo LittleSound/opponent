@@ -1,16 +1,16 @@
-type scene = {
+export type SceneType = {
     map: number[][]
-    lead: Lead
+    lead: LeadType
 }
 
-type Lead = {
+export type LeadType = {
     position: cc.Vec2
 }
 
 
-export class scenes {
+export class Scenes {
     // 场景1
-    public static scene1: scene = {
+    public static scene1: SceneType = {
         // 地图  注意，每一行的元素个数必须相同
         map: [
             // 0表示什么都没有 / 1表示地面 / 2表示墙壁
@@ -34,7 +34,7 @@ export class scenes {
     }
 
     // 场景2
-    public static scene2: scene = {
+    public static scene2: SceneType = {
         // 地图
         map: [
             // 0表示什么都没有 / 1表示地面 / 2表示墙壁
