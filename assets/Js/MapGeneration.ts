@@ -24,8 +24,9 @@ export default class MapGeneration extends cc.Component {
     }
 
     start() {
-        this.ergodicMap(Scenes.scene1.map)
-        this.initPlayerPosition(Scenes.scene1.lead.position)
+        const scene = Scenes.sceneCs;
+        this.ergodicMap(scene.map)
+        this.initPlayerPosition(scene.lead.position)
     }
 
     ergodicMap(map: number[][]) {
