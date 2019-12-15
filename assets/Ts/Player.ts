@@ -2,6 +2,7 @@ const { ccclass, property } = cc._decorator;
 
 import { GameLevels } from './GameLevels'
 import { Scenes } from './Scenes';
+import { UiMain, UiState } from './UiMain';
 
 type MapClickData = {
     x: number
@@ -43,7 +44,12 @@ export default class Player extends cc.Component {
      */
     onMapClick(data: MapClickData) {
         if (data.type === 0 || data.type === 2) console.log('无法抵达此区域');
-        else if (data.type === 1) this.moveLead(data);
+        else if (data.type === 1) {
+            if (UiMain.state === UiState.chooseDestination) {
+                this.moveLead(data);
+            }
+            else console.log('请先选择指令');
+        }
     }
 
     /**
@@ -73,7 +79,7 @@ export default class Player extends cc.Component {
             // 输出、染色
             console.log('遍历一遍后的结果：', this.serialNumber + 1, minTile.f, minTile, aStarMap)
             if (minTile || this.serialNumber > 9999) {
-                this.setTileColor(minTile.position, cc.Color.ORANGE)
+                // this.setTileColor(minTile.position, cc.Color.ORANGE)
             }
             else {
                 console.error('寻路失败');
@@ -123,7 +129,7 @@ export default class Player extends cc.Component {
 
                 searchRes.push(aStarMap[pointer.y][pointer.x]);
                 // 染色
-                this.setTileColor(pointer, cc.Color.CYAN)
+                // this.setTileColor(pointer, cc.Color.CYAN)
             }
         }
         return aStarMap;
@@ -234,12 +240,17 @@ export default class Player extends cc.Component {
 
     /** 行走路线动画 */
     moveGo(route: AStarTile[]) {
+        UiMain.setState(UiState.movingIng);
+        
         let actionList: any[] = [];
         for (let routeTile of route) {
             let ve2 = routeTile.position;
             actionList.push(cc.moveTo(0.3, cc.v2(Math.round(ve2.x * GameLevels.blockSize), Math.round(-ve2.y * GameLevels.blockSize))))
         }
-        const action = cc.sequence(cc.show(), ...actionList);
+        const action = cc.sequence(cc.show(), ...actionList, cc.callFunc(() => {
+            UiMain.setState(UiState.start)
+            this.initButtonColor()
+        }));
         this.node.runAction(action);
     }
 
