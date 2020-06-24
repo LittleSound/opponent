@@ -26,6 +26,8 @@ type AStarTile = {
     hn: number
     /** 连接编号 */
     num: number
+    /** 父地块 */
+    parent: AStarTile
 }
 
 @ccclass
@@ -76,22 +78,24 @@ export default class Player extends cc.Component {
         while (pointer.x !== end.x || pointer.y !== end.y) {
             aStarMap = this.searchNearby(aStarMap, first, end, pointer);
             let minTile = this.getMinFOpenTile(aStarMap, pointer);
-            // 输出、染色
-            console.log('遍历一遍后的结果：', this.serialNumber + 1, minTile.f, minTile, aStarMap)
             if (minTile || this.serialNumber > 9999) {
-                // this.setTileColor(minTile.position, cc.Color.ORANGE)
+                this.setTileColor(minTile.position, cc.Color.ORANGE)
             }
             else {
                 console.error('寻路失败');
+                UiMain.setState(UiState.start);
+                this.initButtonColor();
                 return;
             }
+            // 输出、染色
+            console.log('遍历一遍后的结果：', this.serialNumber + 1, minTile.f, minTile, aStarMap)
 
             pointer = minTile.position
             aStarMap[pointer.y][pointer.x].num = ++this.serialNumber;
             // 延迟
             // await this.delay();
         }
-        // 根据num最小原则寻找最短路径
+        // 从终点开始逆推路径
         const route = this.getShortestRoute(aStarMap, end);
         console.log('遍历结束', route, aStarMap);
         // 移动到目的地
@@ -107,7 +111,6 @@ export default class Player extends cc.Component {
      */
     searchNearby(aStarMap: AStarTile[][], first: cc.Vec2, end: cc.Vec2, myself: cc.Vec2) {
         const searchList = [{ x: -1, y: 0 }, { x: 0, y: -1 }, { x: 1, y: 0 }, { x: 0, y: 1 }];
-        let searchRes: AStarTile[] = [];
         for (let i = 0; i < searchList.length; i++) {
             const pointer = new cc.Vec2(myself.x + searchList[i].x, myself.y + searchList[i].y);
             // 超出范围的不需要遍历
@@ -126,8 +129,6 @@ export default class Player extends cc.Component {
                     else continue;
                 }
                 else aStarMap[pointer.y][pointer.x] = newTile;
-
-                searchRes.push(aStarMap[pointer.y][pointer.x]);
                 // 染色
                 // this.setTileColor(pointer, cc.Color.CYAN)
             }
@@ -157,7 +158,8 @@ export default class Player extends cc.Component {
             f,
             gn,
             hn,
-            num: null
+            num: null,
+            parent
         } as AStarTile;
     }
 
@@ -185,15 +187,6 @@ export default class Player extends cc.Component {
         }
         // 选出f值最小的队列中离终点最近的地块
         minTile.sort((a, b) => a.hn - b.hn)
-        console.log('搜索优化0', minTile[0], minTile);
-        minTile = minTile.filter(a => a.hn === minTile[0].hn) 
-        console.log('搜索优化0', minTile[0], minTile);  
-        minTile.sort((a, b) => {
-            const an = Math.abs(a.position.x - parent.x) + Math.abs(a.position.y - parent.y);
-            const bn = Math.abs(b.position.x - parent.x) + Math.abs(b.position.y - parent.y);
-            return an - bn
-        })
-        console.log('搜索优化0', minTile[0], minTile);
         return minTile[0];
     }
 
@@ -205,36 +198,13 @@ export default class Player extends cc.Component {
     getShortestRoute(aStarMap: AStarTile[][], end: cc.Vec2) {
         // 路径数组
         let route: AStarTile[] = [aStarMap[end.y][end.x]];
-        // 遍历列表
-        const searchList = [{ x: -1, y: 0 }, { x: 0, y: -1 }, { x: 1, y: 0 }, { x: 0, y: 1 }];
-
-        // 遍历直至找到序号0的地块位置
+        // 将父节点插入到route数组的头部
         for (let i = 0; i < 10000; i++) {
-            const routeTile = route[route.length - 1];
-            let minNumTile: AStarTile;
-            // 遍历当前地块附近的地块
-            for (let i = 0; i < searchList.length; i++) {
-                const pointer = new cc.Vec2(routeTile.position.x + searchList[i].x, routeTile.position.y + searchList[i].y);
-                // 超出范围的不需要遍历
-                const noOverflow = pointer.y < GameLevels.scene.map.length && pointer.x < GameLevels.scene.map[0].length;
-                const isTooSmall = pointer.y < 0 || pointer.x < 0;
-                if (!noOverflow || isTooSmall) continue;
-                // 排除没有序号的地块，筛选当前地块附近序号最小的地块
-                if (!aStarMap[pointer.y][pointer.x] || aStarMap[pointer.y][pointer.x].num == null)
-                    continue;
-                else if (!minNumTile || aStarMap[pointer.y][pointer.x].num < minNumTile.num)
-                    minNumTile = aStarMap[pointer.y][pointer.x];
-            }
-            // 如果搜索到序号0（回到起点）则结束遍历
-            if (minNumTile.num !== 0) {
-                route.push(minNumTile);
-                console.log('最短路径', minNumTile.num, minNumTile);
-                this.setTileColor(minNumTile.position, cc.Color.GREEN)
-            }
+            this.setTileColor(route[0].position, cc.Color.GREEN)
+            if (!route[0].isFirst)
+                route.unshift(route[0].parent);
             else break;
         }
-        // 正序结果并返回
-        route.sort((a, b) => a.num - b.num)
         return route;
     }
 
@@ -245,7 +215,7 @@ export default class Player extends cc.Component {
         let actionList: any[] = [];
         for (let routeTile of route) {
             let ve2 = routeTile.position;
-            actionList.push(cc.moveTo(0.3, cc.v2(Math.round(ve2.x * GameLevels.blockSize), Math.round(-ve2.y * GameLevels.blockSize))))
+            actionList.push(cc.moveTo(0.1, cc.v2(Math.round(ve2.x * GameLevels.blockSize), Math.round(-ve2.y * GameLevels.blockSize))))
         }
         const action = cc.sequence(cc.show(), ...actionList, cc.callFunc(() => {
             UiMain.setState(UiState.start)
@@ -293,6 +263,4 @@ export default class Player extends cc.Component {
             }
         }
     }
-
-    // update (dt) {}
 }

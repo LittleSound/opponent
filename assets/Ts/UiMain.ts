@@ -29,6 +29,9 @@ export class UiMain extends cc.Component {
     moveButton: cc.Node = null;
 
     @property(cc.Node)
+    refreshButton: cc.Node = null;
+
+    @property(cc.Node)
     blockInputEvents: cc.Node = null;
 
     onLoad () {
@@ -48,18 +51,24 @@ export class UiMain extends cc.Component {
 
     enterChooseDestination() {
         this.moveButton.active = false;
+        this.refreshButton.active = false;
         this.blockInputEvents.active = false;
         this.title.string = '选择移动目标'
     }
 
     enterStart() {
         this.moveButton.active = true;
+        this.refreshButton.active = true;
         this.title.string = '选择指令'
     }
 
     enterMovingIng() {
         this.blockInputEvents.active = true;
         this.title.string = '玩家行动中'
+    }
+
+    onRefreshButtonClick() {
+        cc.director.loadScene("map");
     }
 
     // update (dt) {}

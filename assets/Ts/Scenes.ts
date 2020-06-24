@@ -56,6 +56,30 @@ export class Scenes {
         }
     }
 
+    public static scene3: SceneType = {
+        // 地图
+        map: [
+            // 0表示什么都没有 / 1表示地面 / 2表示墙壁
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1],
+            [1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1],
+            [1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1],
+            [1, 1, 2, 2, 2, 2, 1, 1, 2, 1, 1, 1, 1],
+            [1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1],
+            [1, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1],
+            [1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        ],
+        // 玩家
+        lead: {
+            // 玩家的位置
+            position: new cc.Vec2(1, 6)
+        }
+    }
+
     public static sceneCs: SceneType = {
         // 地图
         map: [
@@ -77,5 +101,24 @@ export class Scenes {
             // 玩家的位置
             position: new cc.Vec2(10, 5)
         }
+    }
+
+    /** 生成一个随机地图 */
+    public static random() {
+        let max = new cc.Vec2(12, 12);
+        let density = 3
+        const lead = { position: new cc.Vec2(Math.round(Math.random() * max.y), Math.round(Math.random() * max.x)) };
+        let map: number[][] = [];
+        for (let y = 0; y < max.y; y++) {
+            map[y] = [];
+            for (let x = 0; x < max.x; x++) {
+                if(y === lead.position.y && x === lead.position.x) map[y][x] = 1;
+                else map[y][x] = Math.floor(Math.random() * 10) < density ? 2 : 1;
+            }
+        }
+        return {
+            map,
+            lead
+        } as SceneType
     }
 }
